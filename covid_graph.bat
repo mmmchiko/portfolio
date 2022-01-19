@@ -6,8 +6,14 @@ echo ダウンロードが完了しました。
 covidGifu_city.py
 echo 市町村別グラフ作成が完了しました。
 
+covidGifu_cityStack.py
+echo 市町村別積み上げグラフ作成が完了しました。
+
 covidGifu_old.py
 echo 年代別グラフ作成が完了しました。
+
+covidGifu_oldStack.py
+echo 年代別積み上げグラフ作成が完了しました。
 
 pause
 

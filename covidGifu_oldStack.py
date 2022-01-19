@@ -1,12 +1,13 @@
-﻿#
+#
 # 岐阜県新型コロナウイルス感染症に関する県内の感染動向、検査件数、相談受付件数
-# 年代別グラフ作成
+# 年代別積み上げグラフ作成
 #
 # partial release history:
-# 2022/1/13 m.maruyama   Created
+# 2022/1/18 m.maruyama   Created
 #
 import csv, os
 import pandas as pd
+import glob
 import numpy as np
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -14,7 +15,16 @@ import datetime
 from datetime import date, timedelta
 
 #CSVファイルからdfへ変換
-covid_data_org = pd.read_csv('csv/210005_gifu_covid19_patients.csv',encoding = 'shift_jis')
+# フォルダ内のCSVファイルの一覧を取得
+files = sorted(glob.glob('csv/*.csv'))
+# ファイル数を取得
+file_number = len(files)
+# CSVファイルの中身を読み出して、リスト形式にまとめる
+csv_list = []
+for file in files:
+    csv_list.append(pd.read_csv(file,encoding='shift_jis',skiprows=[1]))
+# CSVファイルの結合
+covid_data_org = pd.concat(csv_list)
 
 covid_data = covid_data_org.copy()
 #不要な列を削除
@@ -50,47 +60,46 @@ columns1 =[ "100歳以上",
             "80代",
             "90代"]
 
-# 2021/10/1から今日までの行を設定
-d1 = date(2021,10,1)
+# 指定日から今日までの行を設定
+#d1 = date(2020,2,26)
+d1 = date(2022,1,1)
 d2 = datetime.date.today()
 
-index1 = []
+# X軸データ　日付
+xDate = []
 for i in range((d2 - d1).days + 1):
     date = d1 + timedelta(i)
-    index1.append(date)
+    xDate.append(date)
     
-# データ部分をゼロクリア
-list1 = [[0] * len(columns1)] * len(index1)
+# Y軸データ二次元配列
+yData = []
 
-# グラフ用df作成
-covid_grph = pd.DataFrame(data=list1, index=index1, columns=columns1)
+# 年代＋日付を条件に該当行を抽出
+for col, old in enumerate(columns1):
+    covid_df1 = covid_data[covid_data['患者_年代'] == old]
+    yDataOld = []
 
-# データ取得
-# 日付を条件に該当行を抽出
-for row, date1 in enumerate(index1):
-    strdate = date1.strftime('%Y/%m/%d')
-    strdate = strdate.replace('/0', '/')
-    covid_df1 = covid_data[covid_data['公表_年月日'] == strdate]
-    
-    # 年代＋日付を条件に該当行を抽出
-    for col, old in enumerate(columns1):
-        covid_df2 = covid_df1[covid_df1['患者_年代'] == old]
+    # 日付を条件に該当行を抽出
+    for row, date1 in enumerate(xDate):
+        strdate = date1.strftime('%Y/%m/%d')
+        strdate = strdate.replace('/0', '/')
+        covid_df2 = covid_df1[covid_df1['公表_年月日'] == strdate]
         if len(covid_df2) :
-            covid_grph.iat[row, col] = covid_df2.iat[0,2]
+            yDataOld.append(covid_df2.iat[0, 2])
+        else :
+            yDataOld.append(0)
+    # Y軸データに年代別データを追加
+    yData.append(yDataOld)
         
-# 出力
-#covid_grph.to_csv('covid_grph_out.csv')
-
 # グラフ出力
-plt.figure()
-covid_grph.plot(
-        grid=True,
-        colormap='Accent',
-        legend=False,
-        alpha=1,
-        figsize=(12, 6))
+plt.figure(figsize=(12, 6))
+plt.stackplot(
+        xDate, 
+        yData,
+        labels = columns1,
+        colors = None
+)
 
-# タイトル
 # タイトル
 dt_now = datetime.datetime.now()
 plt.title("岐阜県内の感染動向（年代別）" + dt_now.strftime('%Y-%m-%d %H:%M:%S') + " 現在", fontname="MS Gothic")
@@ -100,7 +109,7 @@ plt.xlabel("日付", fontname="MS Gothic")
 plt.ylabel("人数", fontname="MS Gothic")
 
 # 軸目盛
-plt.yticks(np.arange(0, 50, step=5))
+plt.yticks(np.arange(0, 500, step=50))
 
 # 凡例
 plt.legend(	bbox_to_anchor=(1.05, 1), 
@@ -111,7 +120,8 @@ plt.legend(	bbox_to_anchor=(1.05, 1),
 		prop={"family":"MS Gothic"})
 
 # 画像ファイル保存
-strfname = 'png/' + d2.strftime('%Y%m%d') + '_covidGifu_old.png'
+strfname = 'png/' + d2.strftime('%Y%m%d') + '_covidGifu_oldStack.png'
 plt.savefig(strfname, bbox_inches='tight')
 
+plt.show()
 plt.close('all')
