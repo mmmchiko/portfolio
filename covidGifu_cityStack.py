@@ -25,9 +25,12 @@ for file in files:
 # CSVファイルの結合
 covid_data_org = pd.concat(csv_list)
 
-covid_data = covid_data_org.copy()
 #不要な列を削除
-covid_data.drop([
+covid_data_org.drop(
+    covid_data_org.columns[[13, 14, 15, 16]], axis=1,inplace=True)
+
+#不要な列を削除
+covid_data_org.drop([
     "全国地方公共団体コード", 
     "都道府県名", 
     "市区町村名", 
@@ -39,11 +42,16 @@ covid_data.drop([
     "患者_症状", 
     "患者_渡航歴の有無フラグ"], axis=1,inplace=True)
 
+# 公表_年月日　1～10000件 "yyyy/m/d"　10001件～ "yyyy-mm-dd"
+# 日付書式を統一
+#covid_data_org.replace({'公表_年月日': {'-0': '/'}}, inplace=True)
+#covid_data_org.replace({'公表_年月日': {'-': '/'}}, inplace=True)
+
 #市町村毎に感染者数を集計
 covid_data = covid_data_org.groupby(['公表_年月日', '患者_居住地'], as_index=False).count()
 
 # 出力
-#covid_data.to_csv('covid_data_out.csv')
+covid_data.to_csv('covid_data_out.csv')
 
 # グラフ用df作成
 # 42市町村を列に設定
@@ -155,8 +163,8 @@ for col, city in enumerate(columns1):
 
     # 日付を条件に該当行を抽出
     for row, date1 in enumerate(xDate):
-        strdate = date1.strftime('%Y/%m/%d')
-        strdate = strdate.replace('/0', '/')
+        strdate = date1.strftime('%Y-%m-%d')
+#        strdate = strdate.replace('/0', '/')
         covid_df2 = covid_df1[covid_df1['公表_年月日'] == strdate]
         if len(covid_df2) :
             yDataCity.append(covid_df2.iat[0, 2])
@@ -164,6 +172,7 @@ for col, city in enumerate(columns1):
             yDataCity.append(0)
     # Y軸データに市町村別データを追加
     yData.append(yDataCity)
+#    print(yData)
         
 # グラフ出力
 plt.figure(figsize=(12, 6))
@@ -183,7 +192,7 @@ plt.xlabel("日付", fontname="MS Gothic")
 plt.ylabel("人数", fontname="MS Gothic")
 
 # 軸目盛
-plt.yticks(np.arange(0, 500, step=50))
+#plt.yticks(np.arange(0, 500, step=50))
 
 # 凡例
 plt.legend(

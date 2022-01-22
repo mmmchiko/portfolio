@@ -81,8 +81,8 @@ for col, old in enumerate(columns1):
 
     # 日付を条件に該当行を抽出
     for row, date1 in enumerate(xDate):
-        strdate = date1.strftime('%Y/%m/%d')
-        strdate = strdate.replace('/0', '/')
+        strdate = date1.strftime('%Y-%m-%d')
+#        strdate = strdate.replace('/0', '/')
         covid_df2 = covid_df1[covid_df1['公表_年月日'] == strdate]
         if len(covid_df2) :
             yDataOld.append(covid_df2.iat[0, 2])
@@ -109,7 +109,7 @@ plt.xlabel("日付", fontname="MS Gothic")
 plt.ylabel("人数", fontname="MS Gothic")
 
 # 軸目盛
-plt.yticks(np.arange(0, 500, step=50))
+#plt.yticks(np.arange(0, 500, step=50))
 
 # 凡例
 plt.legend(	bbox_to_anchor=(1.05, 1), 
